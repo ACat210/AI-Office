@@ -1,0 +1,14 @@
+__pycache__/
+.pytest_cache/
+
+.env
+.venv/
+.claude/
+.idea/
+
+backend/logs/
+backend/memory_data/
+backend/generated/
+
+
+*.log
