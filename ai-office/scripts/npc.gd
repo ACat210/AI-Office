@@ -2,8 +2,8 @@
 extends CharacterBody2D  # ⭐ 改为CharacterBody2D
 
 # NPC信息
-@export var npc_name: String = "需求多"
-@export var npc_title: String = "产品经理"
+@export var npc_name: String = ""
+@export var npc_title: String = ""
 
 # NPC外观配置
 @export var sprite_frames: SpriteFrames = null  # 自定义精灵帧资源
@@ -40,7 +40,24 @@ var spawn_position: Vector2 = Vector2.ZERO  # 出生位置
 func _ready():
 	# 添加到npcs组 ⭐ 
 	add_to_group("npcs")
-
+	# 直接用 Inspector 里填好的
+	if name_label:
+		name_label.text = npc_name
+	#match name:
+		#"npc_PM":
+			#npc_name = Config.NPC_NAMES[0]
+			#npc_title = "产品经理"
+		#"npc_Dev":
+			#npc_name = Config.NPC_NAMES[1]
+			#npc_title = "程序员"
+		#"npc_UI":
+			#npc_name = Config.NPC_NAMES[2]
+			#npc_title = "UI设计师"
+	
+	# 同步显示到头顶的 Label
+	if name_label:
+		name_label.text = npc_name
+		
 	# 设置NPC名字
 	name_label.text = npc_name
 
