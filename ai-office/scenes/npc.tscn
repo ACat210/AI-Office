@@ -1,7 +1,7 @@
-[gd_scene load_steps=19 format=3 uid="uid://dxcvuxgvdsx7"]
+[gd_scene load_steps=11 format=3 uid="uid://dxcvuxgvdsx7"]
 
 [ext_resource type="Script" uid="uid://cedfqqodwcl2a" path="res://scripts/npc.gd" id="1_abqhh"]
-[ext_resource type="Texture2D" uid="uid://cb7j2bp42cruq" path="res://assets/characters/yutou.png" id="2_abqhh"]
+[ext_resource type="Texture2D" uid="uid://5fmx0bik3bhw" path="res://assets/characters/gongju.png" id="2_abqhh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abqhh"]
 size = Vector2(37, 58)
@@ -12,7 +12,7 @@ region = Rect2(64, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7n8xq"]
 atlas = ExtResource("2_abqhh")
-region = Rect2(0, 0, 64, 64)
+region = Rect2(64, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4wlns"]
 atlas = ExtResource("2_abqhh")
@@ -20,43 +20,11 @@ region = Rect2(64, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tl2vt"]
 atlas = ExtResource("2_abqhh")
-region = Rect2(128, 0, 64, 64)
+region = Rect2(64, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hwkja"]
 atlas = ExtResource("2_abqhh")
-region = Rect2(0, 64, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0tygy"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(64, 64, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_sptji"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(128, 64, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_v4e37"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(0, 192, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_1h837"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(64, 192, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gl1un"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(128, 192, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_wuru7"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(0, 128, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_nyaq3"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(64, 128, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_yf2ql"]
-atlas = ExtResource("2_abqhh")
-region = Rect2(128, 128, 64, 64)
+region = Rect2(64, 0, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_nyaq3"]
 resource_local_to_scene = true
@@ -72,12 +40,6 @@ animations = [{
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7n8xq")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_4wlns")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_tl2vt")
 }],
 "loop": true,
 "name": &"walk_down",
@@ -85,13 +47,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_hwkja")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0tygy")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_sptji")
+"texture": SubResource("AtlasTexture_4wlns")
 }],
 "loop": true,
 "name": &"walk_left",
@@ -99,13 +55,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_v4e37")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_1h837")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_gl1un")
+"texture": SubResource("AtlasTexture_tl2vt")
 }],
 "loop": true,
 "name": &"walk_right",
@@ -113,13 +63,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_wuru7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_nyaq3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_yf2ql")
+"texture": SubResource("AtlasTexture_hwkja")
 }],
 "loop": true,
 "name": &"walk_up",
@@ -127,7 +71,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nh2m4"]
-size = Vector2(65, 86)
+size = Vector2(42, 59)
 
 [node name="NPC" type="CharacterBody2D"]
 script = ExtResource("1_abqhh")
@@ -138,13 +82,13 @@ shape = SubResource("RectangleShape2D_abqhh")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_nyaq3")
-animation = &"walk_down"
+animation = &"idle"
 autoplay = "idle"
 
 [node name="InteractionArea" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
-position = Vector2(-0.5, 0)
+position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_nh2m4")
 
 [node name="NameLabel" type="Label" parent="."]
@@ -157,9 +101,9 @@ text = "设计多"
 horizontal_alignment = 1
 
 [node name="DialogueLabel" type="Label" parent="."]
-offset_left = 29.0
-offset_top = -29.0
-offset_right = 122.0
-offset_bottom = 30.0
+offset_left = 34.0
+offset_top = -28.0
+offset_right = 127.0
+offset_bottom = 31.0
 theme_override_font_sizes/font_size = 14
 autowrap_mode = 2
