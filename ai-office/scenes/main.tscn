@@ -531,10 +531,11 @@ position = Vector2(450, 492)
 [node name="NPCs" type="Node2D" parent="."]
 
 [node name="NPC_UI" parent="NPCs" instance=ExtResource("3_jyhfs")]
-position = Vector2(56.574997, 148.00049)
+position = Vector2(200, 148)
 velocity = Vector2(-48.909435, -10.38591)
 npc_name = "设计多"
 sprite_frames = SubResource("SpriteFrames_85g3d")
+wander_range = 50.0
 
 [node name="AnimatedSprite2D" parent="NPCs/NPC_UI" index="1"]
 sprite_frames = SubResource("SpriteFrames_r4e17")
@@ -545,17 +546,19 @@ offset_left = -30.0
 offset_right = 18.0
 
 [node name="NPC_Dev" parent="NPCs" instance=ExtResource("3_jyhfs")]
-position = Vector2(823.07477, 145.17638)
+position = Vector2(850, 145.176)
 velocity = Vector2(0, 0.015997104)
 npc_name = "技术多"
 sprite_frames = SubResource("SpriteFrames_ya4ey")
 move_speed = 20.0
+wander_range = 20.0
 
 [node name="NPC_PM" parent="NPCs" instance=ExtResource("3_jyhfs")]
 z_index = 1
-position = Vector2(57, 363)
+position = Vector2(400, 363)
 velocity = Vector2(-13.943871, 0)
 npc_name = "需求多"
+wander_range = 20.0
 
 [node name="AnimatedSprite2D" parent="NPCs/NPC_PM" index="1"]
 sprite_frames = SubResource("SpriteFrames_choun")

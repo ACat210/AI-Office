@@ -41,6 +41,12 @@ dialogue_logger.addHandler(console_handler)
 # 防止日志传播到root logger
 dialogue_logger.propagate = False
 
+# 抑制第三方库的HTTP请求日志
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 def log_dialogue_start(npc_name: str, player_message: str):
     """记录对话开始"""
     dialogue_logger.info("=" * 60)

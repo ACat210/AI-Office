@@ -181,6 +181,17 @@ def _parse_tool_call(response: str) -> dict:
     return None
 
 
+def _truncate_args(args: dict, max_len: int = 80) -> dict:
+    """截断参数字典中的大段文本，用于日志显示"""
+    truncated = {}
+    for k, v in args.items():
+        if isinstance(v, str) and len(v) > max_len:
+            truncated[k] = v[:max_len] + "..."
+        else:
+            truncated[k] = v
+    return truncated
+
+
 def pm_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
     """需求多(PM) - 需求分析节点"""
     role = NPC_ROLES[NPC_NAMES["pm"]]
@@ -195,15 +206,17 @@ def pm_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
         task_summary=task
     )
 
+    log_info(f"  🤖 [{NPC_NAMES['pm']}] 正在分析需求...")
     messages = _build_messages(system_prompt, state.get("user_input", ""))
     response_obj = llm.invoke(messages)
     response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
+    log_info(f"  💬 [{NPC_NAMES['pm']}] 需求分析完成")
 
     agent_history = state.get("agent_history", [])
     agent_history.append({
         "agent": "pm",
         "npc_name": NPC_NAMES["pm"],
-        "output": response[:1000] + "..." if len(response) > 1000 else response
+        "output": response[:500] + "..." if len(response) > 500 else response
     })
 
     return {
@@ -236,15 +249,17 @@ def designer_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
         rag_context=rag_context or "（暂无设计规范参考）"
     )
 
+    log_info(f"  🎨 [{NPC_NAMES['designer']}] 正在设计方案...")
     messages = _build_messages(system_prompt, state.get("user_input", ""))
     response_obj = llm.invoke(messages)
     response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
+    log_info(f"  💬 [{NPC_NAMES['designer']}] 设计方案完成")
 
     agent_history = state.get("agent_history", [])
     agent_history.append({
         "agent": "designer",
         "npc_name": NPC_NAMES["designer"],
-        "output": response[:1000] + "..." if len(response) > 1000 else response
+        "output": response[:500] + "..." if len(response) > 500 else response
     })
 
     return {
@@ -287,6 +302,7 @@ def dev_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
     )
 
     # ==================== ReAct 循环 ====================
+    log_info(f"  🔧 [{NPC_NAMES['dev']}] 正在实现代码...")
     messages = _build_messages(system_prompt, state.get("user_input", ""))
     max_rounds = 3  # 最多调用 3 次工具
     tool_call_log = []
@@ -305,7 +321,7 @@ def dev_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
         # 执行工具调用
         tool_name = tool_call["tool"]
         tool_args = tool_call["args"]
-        log_info(f"  🔧 技术多调用工具: {tool_name}({tool_args})")
+        log_info(f"  🔧 技术多调用工具: {tool_name}({_truncate_args(tool_args)})")
 
         try:
             tool_result = CodeMCPClient.call_tool(tool_name, **tool_args)
@@ -335,6 +351,58 @@ def dev_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
     if final_response.startswith("【最终回复】"):
         final_response = final_response[6:].strip()
 
+    # ==================== 工具调用结果校验 ====================
+    verify_messages = []
+    for call in tool_call_log:
+        if call["tool"] == "write_file":
+            filepath = call["args"].get("filepath", call["args"].get("file_path", ""))
+            if not filepath:
+                continue
+
+            try:
+                content_result = CodeMCPClient.call_tool("read_file", filepath=filepath)
+                if isinstance(content_result, str) and (content_result.startswith("错误") or content_result.startswith("失败")):
+                    verify_messages.append(f"⚠️ {filepath}: 文件读取失败 — {content_result}")
+                    continue
+
+                content = content_result if isinstance(content_result, str) else str(content_result)
+
+                if filepath.endswith(".py"):
+                    try:
+                        compile(content, filepath, "exec")
+                        verify_messages.append(f"✅ {filepath}: Python 语法检查通过")
+                    except SyntaxError as e:
+                        verify_messages.append(f"❌ {filepath}: Python 语法错误 — {e}")
+
+                elif filepath.endswith(".html"):
+                    if "<html" in content.lower() or "<!DOCTYPE" in content:
+                        verify_messages.append(f"✅ {filepath}: HTML 基本结构检查通过")
+                    else:
+                        verify_messages.append(f"⚠️ {filepath}: 文件内容不是有效的 HTML（缺少 <html> 或 <!DOCTYPE>）")
+
+                elif filepath.endswith(".css"):
+                    verify_messages.append(f"✅ {filepath}: 文件已保存（{len(content)} 字节）")
+
+                elif filepath.endswith(".js"):
+                    try:
+                        compile(content, filepath, "exec")
+                        verify_messages.append(f"✅ {filepath}: JavaScript 语法检查通过")
+                    except SyntaxError as e:
+                        verify_messages.append(f"❌ {filepath}: JavaScript 语法错误 — {e}")
+
+                else:
+                    verify_messages.append(f"✅ {filepath}: 文件已保存（{len(content)} 字节）")
+
+            except Exception as e:
+                verify_messages.append(f"⚠️ {filepath}: 校验失败 — {e}")
+
+    if verify_messages:
+        verify_text = "\n".join(verify_messages)
+        final_response = f"{final_response}\n\n【代码校验】\n{verify_text}"
+        log_info(f"  🔍 代码校验结果:\n{verify_text}")
+
+    log_info(f"  💬 [{NPC_NAMES['dev']}] 代码实现完成")
+
     # 记录工具调用日志
     mcp_tool_calls = state.get("tool_results", [])
     mcp_tool_calls.extend(tool_call_log)
@@ -348,10 +416,17 @@ def dev_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
 
     # 记录工具调用到协作历史
     for call in tool_call_log:
+        # 截断 args 中的大段内容，只保留前100字符
+        truncated_args = {}
+        for k, v in call["args"].items():
+            if isinstance(v, str) and len(v) > 100:
+                truncated_args[k] = v[:100] + "..."
+            else:
+                truncated_args[k] = v
         agent_history.append({
             "agent": "dev_tool",
             "npc_name": NPC_NAMES["dev"],
-            "output": f"调用了 {call['tool']}({call['args']}) → {call['result'][:80]}"
+            "output": f"调用了 {call['tool']}({truncated_args}) → {call['result'][:80]}"
         })
 
     return {

@@ -1,6 +1,7 @@
 """NPC Agent系统 - LangChain版本 (支持记忆)"""
 
 import os
+import time
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -208,6 +209,11 @@ class NPCMemorySystem:
         vs = self.vector_store
         if vs is None:
             return
+
+        # 自动计算重要性
+        if "importance" not in metadata:
+            metadata["importance"] = self._calculate_importance(content)
+
         try:
             doc = Document(page_content=content, metadata=metadata)
             vs.add_documents([doc])
@@ -255,6 +261,15 @@ class NPCMemorySystem:
         if len(self.working_memory) > self.max_working:
             self.working_memory.pop(0)
 
+        # 触发记忆压缩检查（使用 _last_consolidation_time 防止频繁压缩）
+        now = time.time()
+        last = getattr(self, "_last_consolidation_time", 0)
+        if now - last > 300:  # 至少间隔 5 分钟
+            self._last_consolidation_time = now
+            # 不传 llm，使用降级模式（丢弃低重要性记忆）
+            # 如需 LLM 总结，可在 NPCAgentManager 中调用 consolidate(llm)
+            self.consolidate()
+
     def get_working_context(self, limit: int = 3) -> str:
         """获取最近的工作记忆文本"""
         recent = self.working_memory[-limit:]
@@ -266,6 +281,117 @@ class NPCMemorySystem:
             lines.append(f"  玩家: {item['player']}")
             lines.append(f"  {self.npc_name}: {item['npc']}")
         return "\n".join(lines)
+
+    CONSOLIDATION_THRESHOLD = 50  # 超过此数量触发记忆压缩
+    CONSOLIDATION_BATCH = 30       # 每次压缩处理最旧的N条
+    CONSOLIDATION_MIN = 10         # 压缩后保留的最少条目数
+
+    @staticmethod
+    def _calculate_importance(content: str) -> float:
+        """基于关键词计算记忆重要性分数 (0.0 ~ 1.0)"""
+        # 高重要性关键词（项目相关）
+        high = ["需求", "功能", "bug", "设计", "界面", "代码", "项目",
+                "修改", "问题", "方案", "计划", "任务", "目标"]
+        # 中重要性关键词
+        medium = ["建议", "想法", "方案", "讨论", "决定", "确认",
+                  "需要", "帮忙", "问题", "错误", "汇报"]
+        # 低重要性关键词（日常闲聊）
+        low = ["你好", "吃了", "早安", "晚安", "再见", "拜拜",
+               "哈哈", "好的", "嗯嗯", "没事", "随便"]
+
+        content_lower = content.lower()
+        score = 0.35  # 基础分
+
+        for kw in high:
+            if kw in content_lower:
+                score += 0.12
+        for kw in medium:
+            if kw in content_lower:
+                score += 0.06
+        for kw in low:
+            if kw in content_lower:
+                score -= 0.05
+
+        # 长度加分（长内容通常更有价值）
+        if len(content) > 50:
+            score += 0.08
+        if len(content) > 100:
+            score += 0.08
+
+        return max(0.0, min(1.0, score))
+
+    def consolidate(self, llm=None):
+        """压缩记忆：将最旧的记忆总结成摘要
+
+        当记忆数量超过阈值时，用 LLM 将最旧的记忆压缩为摘要。
+        如果 LLM 不可用，降级为直接丢弃最旧的低重要性记忆。
+
+        Args:
+            llm: 可选的 LLM 实例，用于生成摘要
+        """
+        docs = self.get_all_memories(limit=999)
+        if len(docs) <= self.CONSOLIDATION_THRESHOLD:
+            return  # 不需要压缩
+
+        # 取最旧的 N 条（按索引顺序，越靠前越旧）
+        old_docs = docs[:self.CONSOLIDATION_BATCH]
+        old_content = "\n".join([
+            f"[{d.metadata.get('timestamp', '?')}] {d.page_content}"
+            for d in old_docs
+        ])
+
+        # 尝试用 LLM 生成摘要
+        summary = None
+        if llm is not None:
+            try:
+                prompt = (
+                    f"以下是 {self.npc_name} 的一段对话记忆，请将其压缩为 3-5 条简洁的摘要，"
+                    f"保留重要信息（项目需求、决定、问题等），忽略日常寒暄。\n\n{old_content}"
+                )
+                response = llm.invoke([{"role": "user", "content": prompt}])
+                summary = response.content if hasattr(response, 'content') else str(response)
+            except Exception as e:
+                log_error(f"记忆 LLM 总结失败: {e}")
+
+        vs = self.vector_store
+        if vs is None:
+            return
+
+        # 删除旧记忆
+        for doc in old_docs:
+            doc_id = doc.metadata.get("id", "")
+            if doc_id:
+                try:
+                    vs.delete([doc_id])
+                except Exception:
+                    pass
+
+        # 添加摘要记忆
+        if summary:
+            self.add_memory(
+                content=f"[记忆总结] {summary}",
+                metadata={
+                    "type": "summary",
+                    "timestamp": datetime.now().isoformat(),
+                    "importance": 0.9,
+                }
+            )
+        else:
+            # LLM 不可用，保留最重要的几条
+            sorted_old = sorted(old_docs,
+                key=lambda d: d.metadata.get("importance", 0.5),
+                reverse=True)
+            for doc in sorted_old[:self.CONSOLIDATION_MIN]:
+                self.add_memory(
+                    content=doc.page_content,
+                    metadata=dict(doc.metadata)
+                )
+
+        # 持久化
+        try:
+            vs.save_local(self.persist_dir)
+        except Exception as e:
+            log_error(f"记忆压缩后持久化失败: {e}")
 
     def clear(self, memory_type: Optional[str] = None):
         """清空记忆"""
@@ -456,7 +582,7 @@ class NPCAgentManager:
             for doc in docs:
                 memory_list.append({
                     "content": doc.page_content,
-                    "type": "episodic",
+                    "type": doc.metadata.get("type", "episodic"),
                     "importance": doc.metadata.get("importance", 0.5),
                     "timestamp": doc.metadata.get("timestamp", ""),
                     "metadata": {k: v for k, v in doc.metadata.items() if k != "timestamp"}

@@ -3,7 +3,7 @@
 
 用法:
     python test_chat.py "帮我设计一个登录页面"
-    python test_chat.py --agent "你好"          # 测试多Agent
+    python test_chat.py --agent "帮我设计开发一个登录页面"          # 测试多Agent
     python test_chat.py --single "你好"          # 测试单NPC对话
     python test_chat.py --list                   # 查看NPC列表
 """
@@ -46,28 +46,42 @@ def test_agent_chat(message: str):
     }, config={"configurable": {"thread_id": "test_cli"}})
 
     print(f"\n{'='*60}")
-    print(f"  📋 结果")
-    print(f"  路由: {result.get('active_agent', '?')}")
+    print(f"  📋 各角色输出")
     print(f"{'='*60}\n")
 
     for h in result.get("agent_history", []):
         agent = h.get("agent", "?")
         npc = h.get("npc_name", "?")
         output = h.get("output", "")
+
         if agent == "dev_tool":
-            print(f"  🔧 [{npc}] {output[:150]}")
+            print(f"  🔧 [{npc}] 工具调用:")
+            print(f"       {output[:200]}")
+            print()
+        elif agent == "pm":
+            print(f"  📋 [{agent}] {npc}:")
+            print(f"  {output}")
+            print()
+        elif agent == "designer":
+            print(f"  🎨 [{agent}] {npc}:")
+            print(f"  {output}")
+            print()
+        elif agent == "dev":
+            print(f"  💻 [{agent}] {npc}:")
+            print(f"  {output}")
+            print()
         else:
             print(f"  [{agent}] {npc}:")
-            for line in output.split("\n")[:8]:
-                print(f"    {line}")
-            lines_count = len(output.split("\n"))
-            if lines_count > 8:
-                print(f"    ... (共 {lines_count} 行)")
+            print(f"  {output[:500]}")
             print()
 
     final = result.get("final_response", "")
     if final:
-        print(f"\n  📝 最终回复:\n    {final[:300]}")
+        print(f"{'='*60}")
+        print(f"  📝 最终回复:")
+        print(f"{'='*60}")
+        print(f"  {final}")
+        print()
 
 
 def test_single_chat(message: str):
