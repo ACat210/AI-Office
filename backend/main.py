@@ -29,6 +29,10 @@ from models import (
 )
 from agents import get_npc_manager, NPC_ROLES
 from agent_workflow.workflow import get_workflow
+from logger import (
+    log_error, log_info, log_npc_response,
+    log_memory_saved, log_dialogue_end
+)
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
@@ -274,6 +278,27 @@ async def agent_chat(request: AgentChatRequest):
         # 只保留最近 50 条
         _agent_histories[request.user_id] = _agent_histories[request.user_id][-50:]
 
+        # 记录日志到终端
+        log_info(f"\n{'='*60}")
+        log_info(f"  🤝 多Agent协作完成")
+        log_info(f"  💬 用户: {request.message}")
+        log_info(f"{'='*60}")
+        for h in agent_history:
+            agent = h.get("agent", "?")
+            npc = h.get("npc_name", "?")
+            output = h.get("output", "")
+            if agent == "dev_tool":
+                log_info(f"  🔧 [{npc}] 工具调用: {output[:200]}")
+            else:
+                log_info(f"  [{agent}] {npc}:")
+                for line in output.split("\n")[:5]:
+                    log_info(f"    {line}")
+                if len(output.split("\n")) > 5:
+                    line_count = len(output.split("\n"))
+                    log_info(f"    ... (共{line_count}行)")
+        log_info(f"\n  📝 最终回复: {final_response[:200]}")
+        log_info("=" * 60)
+
         if not final_response:
             messages = result.get("messages", [])
             if messages:
@@ -334,12 +359,32 @@ async def chat_stream(request: ChatRequest):
     async def generate():
         yield f"data: {{\"npc\": \"{request.npc_name}\", \"type\": \"start\"}}\n\n"
         full_text = ""
-        for chunk in llm.stream(messages):
-            content = chunk.content if hasattr(chunk, 'content') else str(chunk)
-            if content:
-                full_text += content
-                # SSE 格式: data: {json}\n\n
-                yield f"data: {json.dumps({'type': 'chunk', 'text': content})}\n\n"
+        try:
+            for chunk in llm.stream(messages):
+                content = chunk.content if hasattr(chunk, 'content') else str(chunk)
+                if content:
+                    full_text += content
+                    # SSE 格式: data: {json}\n\n
+                    yield f"data: {json.dumps({'type': 'chunk', 'text': content})}\n\n"
+        finally:
+            # 流结束后保存记忆和日志（不管是否正常结束）
+            if full_text:
+                try:
+                    # 保存到对话记忆
+                    memory_system = npc_mgr.memories.get(request.npc_name)
+                    if memory_system and hasattr(memory_system, 'add_interaction'):
+                        memory_system.add_interaction(
+                            request.message, full_text,
+                            {"source": "stream", "npc_name": request.npc_name}
+                        )
+                except Exception as e:
+                    log_error(f"流式对话保存记忆失败: {e}")
+
+                # 记录日志到终端和文件
+                log_npc_response(request.npc_name, full_text)
+                log_memory_saved(request.npc_name)
+                log_dialogue_end()
+
         yield f"data: {json.dumps({'type': 'done', 'text': full_text})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")

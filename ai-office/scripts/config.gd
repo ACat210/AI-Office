@@ -3,7 +3,13 @@ extends Node
 
 # ==================== API配置 ====================
 const API_BASE_URL = "http://localhost:8000"
+const API_HOST = "localhost"
+const API_PORT = 8000
+const API_USE_SSL = false
 const API_CHAT = API_BASE_URL + "/chat"
+const API_CHAT_STREAM = API_BASE_URL + "/chat/stream"
+const API_AGENT_CHAT = API_BASE_URL + "/agent/chat"
+const API_AGENT_CHAT_STREAM = API_BASE_URL + "/agent/chat/stream"
 const API_NPCS = API_BASE_URL + "/npcs"
 const API_NPC_STATUS = API_BASE_URL + "/npcs/status"
 

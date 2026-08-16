@@ -211,6 +211,9 @@ def pm_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
     response_obj = llm.invoke(messages)
     response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
     log_info(f"  💬 [{NPC_NAMES['pm']}] 需求分析完成")
+    for line in response.split("\n")[:8]:
+        if line.strip():
+            log_info(f"      {line.strip()}")
 
     agent_history = state.get("agent_history", [])
     agent_history.append({
@@ -254,6 +257,9 @@ def designer_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
     response_obj = llm.invoke(messages)
     response = response_obj.content if hasattr(response_obj, 'content') else str(response_obj)
     log_info(f"  💬 [{NPC_NAMES['designer']}] 设计方案完成")
+    for line in response.split("\n")[:8]:
+        if line.strip():
+            log_info(f"      {line.strip()}")
 
     agent_history = state.get("agent_history", [])
     agent_history.append({
@@ -402,6 +408,9 @@ def dev_node(state: Dict[str, Any], llm: ChatOpenAI) -> Dict[str, Any]:
         log_info(f"  🔍 代码校验结果:\n{verify_text}")
 
     log_info(f"  💬 [{NPC_NAMES['dev']}] 代码实现完成")
+    for line in final_response.split("\n")[:8]:
+        if line.strip():
+            log_info(f"      {line.strip()}")
 
     # 记录工具调用日志
     mcp_tool_calls = state.get("tool_results", [])
