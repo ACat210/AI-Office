@@ -11,7 +11,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
-from rag.knowledge_base import DashScopeEmbeddings
+from knowledge_base.rag import DashScopeEmbeddings
 
 from config import settings
 from logger import (

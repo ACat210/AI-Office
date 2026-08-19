@@ -15,7 +15,7 @@ from config import settings
 from logger import log_info, log_error
 
 # 知识库根目录
-KNOWLEDGE_BASE_DIR = Path(__file__).parent.parent / "knowledge_base"
+KNOWLEDGE_BASE_DIR = Path(__file__).parent
 
 
 class DashScopeEmbeddings(Embeddings):
@@ -44,8 +44,8 @@ class DashScopeEmbeddings(Embeddings):
         return _dashscope_embed([text])[0]
 
 
-def load_markdown_files(directory: str) -> List[Document]:
-    """加载指定目录下的所有 markdown 文件
+def load_design_files(directory: str) -> List[Document]:
+    """加载指定目录下的所有设计文档（支持 .md 和 .pdf）
 
     Args:
         directory: 知识库目录路径
@@ -58,15 +58,14 @@ def load_markdown_files(directory: str) -> List[Document]:
         log_info(f"  ⚠️  知识库目录不存在: {directory}")
         return []
 
-    md_files = glob.glob(str(dir_path / "**/*.md"), recursive=True)
     documents = []
 
+    # 加载 .md 文件
+    md_files = glob.glob(str(dir_path / "**/*.md"), recursive=True)
     for filepath in md_files:
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-
-            # 文件名作为文档标题
             filename = Path(filepath).stem
             doc = Document(
                 page_content=content,
@@ -77,15 +76,124 @@ def load_markdown_files(directory: str) -> List[Document]:
                 }
             )
             documents.append(doc)
-            log_info(f"    📄 加载文档: {filename}")
+            log_info(f"    📄 MD文档: {filename}")
         except Exception as e:
-            log_error(f"    ⚠️  加载文档失败 {filepath}: {e}")
+            log_error(f"    ⚠️  加载MD文档失败 {filepath}: {e}")
 
+    # 加载 .pdf 文件
+    pdf_files = glob.glob(str(dir_path / "**/*.pdf"), recursive=True)
+    for filepath in pdf_files:
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(str(filepath))
+            content_parts = []
+            for page in reader.pages:
+                text = page.extract_text()
+                if text:
+                    content_parts.append(text)
+            content = "\n\n".join(content_parts)
+
+            if not content.strip():
+                log_info(f"    ⚠️  PDF无可提取文本: {Path(filepath).name}")
+                continue
+
+            # 文档清洗：去掉开头的单独品牌标识行
+            content = _clean_document(content)
+
+            filename = Path(filepath).stem
+            doc = Document(
+                page_content=content,
+                metadata={
+                    "source": str(filepath),
+                    "title": filename,
+                    "type": "design_spec",
+                }
+            )
+            documents.append(doc)
+            log_info(f"    📄 PDF文档: {filename} ({len(content)}字)")
+        except ImportError:
+            log_error("    ⚠️  未安装 pypdf，跳过PDF文件 (pip install pypdf)")
+            break
+        except Exception as e:
+            log_error(f"    ⚠️  加载PDF文档失败 {filepath}: {e}")
+
+    if not documents:
+        log_info(f"  ⚠️  目录 {directory} 中没有找到任何设计文档")
     return documents
 
 
-def chunk_documents(documents: List[Document], chunk_size: int = 500, chunk_overlap: int = 50) -> List[Document]:
-    """将文档切成小块
+def _clean_document(text: str) -> str:
+    """清洗文档内容
+
+    1. 去掉开头的单独品牌标识行（如 'ArcoDesign' 单独成行）
+    """
+    lines = text.split("\n")
+    # 去掉开头空的/纯品牌标识行
+    cleaned = []
+    started = False
+    for line in lines:
+        stripped = line.strip()
+        if not started:
+            # 跳过开头的空行和纯品牌标识行
+            if not stripped:
+                continue
+            if stripped == "ArcoDesign":
+                continue
+            started = True
+        cleaned.append(line)
+    return "\n".join(cleaned).strip()
+
+
+def _is_table_row(line: str) -> bool:
+    """检测是否是表格行（多个空格分隔的字段，或 key: value 对）"""
+    # 包含多个空格分隔的内容 → 表格行
+    parts = [p for p in line.split("  ") if p.strip()]
+    if len(parts) >= 3:
+        return True
+    # 包含 : 或 ： 且两侧都有内容 → 可能是表格而不是标题
+    if "：" in line or ": " in line:
+        return False  # 不一定
+    return False
+
+
+def _detect_heading(line: str) -> bool:
+    """检测一行文本是否是标题
+
+    标题特征：
+    - 长度 2-20 字（排除长句）
+    - 末尾没有句号/逗号/分号等标点
+    - 以中文开头（排除表格行、代码行）
+    - 不是纯数字/符号/中英文混合数据行
+    """
+    line = line.strip()
+    if not line or len(line) > 20 or len(line) < 2:
+        return False
+    # 末尾有句号/逗号/冒号/问号/感叹号 → 不是标题
+    if line[-1] in "。，；：？！、…":
+        return False
+    # 以数字/字母开头 → 不是标题（除非是 'xxx 设计' 这类）
+    if line[0].isdigit() or (line[0].isascii() and line[0].isalpha()):
+        return False
+    # 包含多个空格分隔的字段 → 表格行
+    if _is_table_row(line):
+        return False
+    # 包含 @ → 代码行
+    if "@" in line:
+        return False
+    # 纯符号/数字/颜色值 → 不是标题
+    non_cjk = sum(1 for c in line if ord(c) > 0x4E00 and ord(c) < 0x9FFF)
+    if non_cjk == 0:
+        return False
+    return True
+
+
+def chunk_documents(documents: List[Document], chunk_size: int = 500, chunk_overlap: int = 60) -> List[Document]:
+    """将文档按层级结构切块 + 超长段落按固定长度切分
+
+    策略：
+    1. 先按文本结构拆分：检测标题行 → 按标题分组
+    2. 如果某个标题下的内容超过 chunk_size，再按固定长度切分
+    3. 相邻块之间保证有重叠
 
     Args:
         documents: 原始文档列表
@@ -93,17 +201,97 @@ def chunk_documents(documents: List[Document], chunk_size: int = 500, chunk_over
         chunk_overlap: 块之间重叠字符数
 
     Returns:
-        切块后的 Document 列表
+        Document 列表
     """
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        separators=["\n## ", "\n### ", "\n\n", "\n", "。", "；", " "],
-    )
+    if chunk_overlap >= chunk_size:
+        chunk_overlap = chunk_size // 5
 
-    chunks = splitter.split_documents(documents)
-    log_info(f"    ✂️  文档切片: {len(documents)} 篇 → {len(chunks)} 块")
-    return chunks
+    result = []
+
+    for doc in documents:
+        text = doc.page_content
+        meta = doc.metadata.copy()
+        title = meta.get("title", "unknown")
+
+        # 第一步：按标题层级分组
+        lines = text.split("\n")
+        sections = []  # [(heading, content_lines), ...]
+        current_heading = "概述"
+        current_lines = []
+
+        for line in lines:
+            if _detect_heading(line):
+                # 保存上一个标题的内容
+                if current_lines:
+                    sections.append((current_heading, "\n".join(current_lines)))
+                current_heading = line.strip()
+                current_lines = []
+            else:
+                if line.strip() or current_lines:  # 保留空行但不要连续空行
+                    current_lines.append(line)
+
+        # 最后一个标题
+        if current_lines:
+            sections.append((current_heading, "\n".join(current_lines)))
+
+        # 如果没检测到任何标题，把整篇作为一块
+        if not sections:
+            sections = [("概述", text)]
+
+        # 第二步：每个标题按 chunk_size 切分
+        for heading, content in sections:
+            full_text = f"{heading}\n{content}" if heading != "概述" else content
+
+            if len(full_text) <= chunk_size:
+                # 足够短，直接作为一块
+                result.append(Document(
+                    page_content=full_text,
+                    metadata={**meta, "heading": heading},
+                ))
+            else:
+                # 太长，按固定长度切分
+                # 以段落 (\n\n) 为单位切，避免切碎段落
+                paragraphs = full_text.split("\n\n")
+                current_chunk = ""
+                for para in paragraphs:
+                    if not para.strip():
+                        continue
+                    if len(current_chunk) + len(para) > chunk_size and current_chunk:
+                        result.append(Document(
+                            page_content=current_chunk.strip(),
+                            metadata={**meta, "heading": heading},
+                        ))
+                        current_chunk = para
+                    else:
+                        if current_chunk:
+                            current_chunk += "\n\n" + para
+                        else:
+                            current_chunk = para
+                if current_chunk:
+                    result.append(Document(
+                        page_content=current_chunk.strip(),
+                        metadata={**meta, "heading": heading},
+                    ))
+
+    # 第三步：手动叠加 overlap（只在同一标题下的相邻块之间加，不同标题不加）
+    final = []
+    for i, chunk in enumerate(result):
+        text = chunk.page_content
+        meta = chunk.metadata.copy()
+
+        # 只在同一文档 + 同一 heading 时才加 overlap
+        if final and \
+           final[-1].metadata.get("title") == meta.get("title") and \
+           final[-1].metadata.get("heading") == meta.get("heading"):
+            prev_text = final[-1].page_content
+            overlap_text = prev_text[-chunk_overlap:].lstrip()
+            if overlap_text:
+                text = overlap_text + "\n" + text
+
+        final.append(Document(page_content=text, metadata=meta))
+
+    log_info(f"    ✂️  文档切片: {len(documents)} 篇 → {len(final)} 块 (按标题层级 + {chunk_size}字上限)")
+    return final
 
 
 def _dashscope_embed(texts: list) -> list:
@@ -175,9 +363,9 @@ class DesignKnowledgeBase:
 
         log_info("  📚 初始化设计规范知识库...")
 
-        # 1. 加载文档
+        # 1. 加载文档（支持 .md 和 .pdf）
         design_dir = KNOWLEDGE_BASE_DIR / "design"
-        docs = load_markdown_files(str(design_dir))
+        docs = load_design_files(str(design_dir))
         if not docs:
             log_info("  ⚠️  没有找到设计文档，知识库为空")
             return

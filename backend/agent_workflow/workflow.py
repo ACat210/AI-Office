@@ -18,7 +18,7 @@ from agent_workflow.nodes import (
     pm_node, dev_node, designer_node,
     chat_node, multi_agent_node
 )
-from rag.knowledge_base import get_design_knowledge_base
+from knowledge_base.rag import get_design_knowledge_base
 
 
 def create_workflow() -> StateGraph:

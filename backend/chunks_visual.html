@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库分块可视化</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+         background: #f5f5f5; padding: 30px; color: #333; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+
+  /* 统计卡片 */
+  .stats { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+  .stat-card { flex: 1; min-width: 180px; background: white; border-radius: 10px;
+               padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .stat-card .label { font-size: 12px; color: #888; }
+  .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+
+  /* 文档摘要 */
+  .doc-summary { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+  .doc-card { flex: 1; min-width: 200px; border-radius: 10px; padding: 14px 18px;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .doc-card .doc-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .doc-card .doc-stat { font-size: 12px; color: #555; line-height: 1.6; }
+
+  /* 搜索过滤 */
+  .toolbar { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .toolbar input { padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px;
+                   font-size: 14px; width: 240px; }
+  .toolbar input:focus { outline: none; border-color: #2196F3; }
+  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #ddd;
+                background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+  .filter-btn:hover { background: #f0f0f0; }
+  .filter-btn.active { background: #2196F3; color: white; border-color: #2196F3; }
+
+  /* 分块列表 */
+  .chunk { margin-bottom: 12px; border-radius: 10px; overflow: hidden;
+           box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: box-shadow 0.2s; }
+  .chunk:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+  .chunk-header { display: flex; justify-content: space-between; align-items: center;
+                  padding: 10px 16px; font-size: 13px; cursor: pointer;
+                  border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .chunk-header .chunk-title { font-weight: 600; }
+  .chunk-header .chunk-meta { color: #888; font-size: 12px; }
+  .chunk-body { padding: 14px 16px; font-size: 14px; line-height: 1.8;
+                white-space: pre-wrap; display: none; }
+  .chunk-body.open { display: block; }
+
+  /* 关键词高亮 */
+  .highlight { background: #FFEB3B; padding: 0 2px; border-radius: 2px; }
+
+  /* 重叠提示 */
+  .overlap-badge { display: inline-block; font-size: 11px; padding: 1px 8px;
+                   border-radius: 10px; margin-left: 8px; }
+  .overlap-badge.yes { background: #E8F5E9; color: #2E7D32; }
+  .overlap-badge.no { background: #FFEBEE; color: #C62828; }
+  .overlap-highlight { background: #FFF9C4; }
+
+  /* 进度条 */
+  .progress-bar { height: 4px; border-radius: 2px; background: #eee;
+                  margin-top: 6px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+  @media (max-width: 600px) {
+    body { padding: 16px; }
+    .stats { flex-direction: column; }
+    .doc-summary { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📄 知识库分块可视化</h1>
+<p class="subtitle">分块参数: chunk_size=500, chunk_overlap=60 | 共 44 个块</p>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">文档总数</div>
+    <div class="value">4</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">分块总数</div>
+    <div class="value">44</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">总字符数</div>
+    <div class="value">5,045</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">平均块大小</div>
+    <div class="value">113</div>
+  </div>
+</div>
+
+<div class="doc-summary">
+
+  <div class="doc-card" style="background:#E8F5E9; border-left:4px solid #4CAF50;">
+    <div class="doc-title">introduce</div>
+    <div class="doc-stat">463 字 → 3 个块</div>
+    <div class="progress-bar">
+      <div class="fill" style="width:6.8181818181818175%;background:#4CAF50;"></div>
+    </div>
+  </div>
+
+  <div class="doc-card" style="background:#FFF3E0; border-left:4px solid #FF9800;">
+    <div class="doc-title">philosophy</div>
+    <div class="doc-stat">773 字 → 9 个块</div>
+    <div class="progress-bar">
+      <div class="fill" style="width:20.454545454545457%;background:#FF9800;"></div>
+    </div>
+  </div>
+
+  <div class="doc-card" style="background:#E3F2FD; border-left:4px solid #2196F3;">
+    <div class="doc-title">style-guideline</div>
+    <div class="doc-stat">3125 字 → 27 个块</div>
+    <div class="progress-bar">
+      <div class="fill" style="width:61.36363636363637%;background:#2196F3;"></div>
+    </div>
+  </div>
+
+  <div class="doc-card" style="background:#F3E5F5; border-left:4px solid #9C27B0;">
+    <div class="doc-title">values</div>
+    <div class="doc-stat">684 字 → 5 个块</div>
+    <div class="progress-bar">
+      <div class="fill" style="width:11.363636363636363%;background:#9C27B0;"></div>
+    </div>
+  </div>
+</div>
+<div class="toolbar">
+  <input type="text" id="searchInput" placeholder="🔍 搜索关键词..." oninput="filterChunks()">
+  <span style="color:#888;font-size:13px;">文档筛选:</span>
+  <button class="filter-btn" data-doc="introduce" style="border-color:#4CAF50;" onclick="toggleDocFilter(this)">introduce</button>  <button class="filter-btn" data-doc="philosophy" style="border-color:#FF9800;" onclick="toggleDocFilter(this)">philosophy</button>  <button class="filter-btn" data-doc="style-guideline" style="border-color:#2196F3;" onclick="toggleDocFilter(this)">style-guideline</button>  <button class="filter-btn" data-doc="values" style="border-color:#9C27B0;" onclick="toggleDocFilter(this)">values</button></div>
+
+<div id="chunkList">
+
+  <div class="chunk" data-doc="introduce">
+    <div class="chunk-header" style="background:#E8F5E9;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#1 introduce</span>
+      <span class="chunk-meta">231 字 </span>
+    </div>
+    <div class="chunk-body">介绍
+基于 Byte Design 升级而来，能力全面的企业级产品设计系统。
+ArcoDesign 的诞生
+ArcoDesign 是一套设计系统的简称。
+ArcoDesign 的目标, 即通过通用的设计系统去解决产品中的体验问题, 并为产品设计提供指导原则解决业务问题，同时它能够促进设计部门和研发部门之间
+协作, 成为开发者之间沟通的语言。
+ArcoDesign 主要服务于字节跳动旗下中后台产品的体验设计和技术实现，主要由UED设计和开发同学共同构建及维护。</div>
+  </div>
+
+  <div class="chunk" data-doc="introduce">
+    <div class="chunk-header" style="background:#E8F5E9;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#2 introduce</span>
+      <span class="chunk-meta">35 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">设计语言 - 务实的浪漫主义
+ArcoDesign试图建立一种工作模式</div>
+  </div>
+
+  <div class="chunk" data-doc="introduce">
+    <div class="chunk-header" style="background:#E8F5E9;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#3 introduce</span>
+      <span class="chunk-meta">195 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">务实=同理心 浪漫=想象力
+首先在于务实能够通过设计系统去解决大部分需求极大提高效率解放双手。让设计师&amp;开发能去做一些更"浪漫"即发挥创新&amp;想象力的东西。
+
+在产品侧我们不仅能够通过设计体系去务实的搭建基础功能，甚至可以通过它去配置一些能称得上浪漫的产品追求
+浪漫与务实, 并非矛盾对立。通过对它们的定义得出设计语言的价值观, 这贯穿着整个设计语言。务实与浪漫相辅相成, 成为引导设计方向。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#4 philosophy</span>
+      <span class="chunk-meta">295 字 </span>
+    </div>
+    <div class="chunk-body">设计原则
+设计原则相当于整个语言体系中的修辞手法。
+务实的浪漫主义是对设计语言的形容,它也代表着ArcoDesign试图建立的工作模式。
+浪漫与务实并非矛盾对立, 它们相辅相成，引导设计方向。通过对务实与浪漫的定义得出设计语言的价值观, 这贯穿着整个设计系统。
+清晰与一致的价值观意味着务实的方向, 清晰的效率提升是务实的基础, 品牌的一致性是务实的目的。
+韵律与开放的价值观意味着浪漫的方向, 推敲设计的韵律是Bytedancer的浪漫, 包容开放的体系才能浪漫地解决问题。
+设计原则相当于整个语言体系中的修辞手法, 在实际的词语组成中给我们提供模式化的思考结构。它让整个语言体系更丰满。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#5 philosophy</span>
+      <span class="chunk-meta">33 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">及时反馈
+系统应该让用户知道目前的状态, 并及时给予相对应的反馈。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#6 philosophy</span>
+      <span class="chunk-meta">61 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">贴近现实
+系统应该用用户的语言，用词，短语和用户熟悉的概念，而不是系统术语。遵循现实世界的惯例，让信息符合自然思考逻辑。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#7 philosophy</span>
+      <span class="chunk-meta">21 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">系统一致性
+同一用语、功能、操作保持一致。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#8 philosophy</span>
+      <span class="chunk-meta">65 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">防止错误发生
+比出现错误信息提示更好的是更用心的设计防止这类问题发生。在用户选择动作发生之前，就要防止用户容易混淆或者错误的选择。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#9 philosophy</span>
+      <span class="chunk-meta">64 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">遵从习惯
+尽量减少用户对操作目标的记忆负荷，动作和选项都应该是可见的。比如填完表单，下一步应该生成表单，而不是下一步就是完成。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#10 philosophy</span>
+      <span class="chunk-meta">62 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">突出重点
+用户的浏览动作不是读，不是看，而是扫。设计中应该突出重点，弱化和剔除无关信息。重要对话中不应该包含无关紧要的信息。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#11 philosophy</span>
+      <span class="chunk-meta">87 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">错误帮助
+错误信息应该用语言表达而不是比如404的代码。需要准确地反应问题所在并提出建设性的解决方案, 帮助用户从错误中恢复将损失降到最低, 提供详尽的说明文
+字和指导方向。</div>
+  </div>
+
+  <div class="chunk" data-doc="philosophy">
+    <div class="chunk-header" style="background:#FFF3E0;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#12 philosophy</span>
+      <span class="chunk-meta">77 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">人性化帮助
+如果系统不需要使用帮助文档是最好的，但是有必要提供帮助和文档。帮助性提示最好的方式是：1、无需提示；2、一次性提示；3、常驻提示；4；帮助文档</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#13 style-guideline</span>
+      <span class="chunk-meta">21 字 </span>
+    </div>
+    <div class="chunk-body">样式指南
+从形色质构字全方面深入页面细节。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#14 style-guideline</span>
+      <span class="chunk-meta">98 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">色彩
+色彩对产品的视觉传达和多维度信息的承载有着很重要的影响，好的产品在色彩配置上应当清晰，准确的传达有效信息和品牌感。按照颜色类型和功能的不同，
+arco将色彩分为主色、中性色、功能色和遮罩色。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#15 style-guideline</span>
+      <span class="chunk-meta">202 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">主色
+主色是一个产品的代表颜色，一般与品牌色相关联。常用于主要按钮和文字、重点操作状态、高亮提醒、空状态等。arco的默认主色为#165DFF，同时根据使用
+场景的不同，基于主色衍生出了点击态、悬浮态等不同状态下的颜色。
+为尽可能贴合更多不同产品的色彩需求，arco提供了13种通用主色，并基于主色，通过动态梯度色彩算法衍生出13套基础色板。同时，我们也支持用户使用色彩
+配置工具配置适合自己产品的色板。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#16 style-guideline</span>
+      <span class="chunk-meta">119 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">中性色
+中性色又称为无彩色系，能在产品界面中调和色彩搭配，衬托主色及其他色彩，同时有利于拉开内容层次，使用户更专注于内容。常用于文字、背景、图标、边
+框和分割线等元素。arco根据过往业务经验，提供了适合线条、填充和文字的中性色参考色。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#17 style-guideline</span>
+      <span class="chunk-meta">77 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">功能色
+功能色的主要作用是向用户明确的传达成功、警告、错误、链接等信息和状态。arco基于用户对色彩的通用认知，提供了适合不同状态的功能色及其配套色板。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#18 style-guideline</span>
+      <span class="chunk-meta">72 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">遮罩色
+遮罩色常用于作为底色突出模态窗口，一般以黑色、白色为基色，配合透明度百分比使用。arco默认的遮罩色为#1D2129，透明度为60%。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#19 style-guideline</span>
+      <span class="chunk-meta">86 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">文字
+文字是重要的信息传达元素之一，它本身的视觉特性和品质影响着信息传递的质量和产品操作的效率。根据过往的产品设计经验，arco提供了通用的字体、字
+重、行高、段间距建议。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#20 style-guideline</span>
+      <span class="chunk-meta">155 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">字体
+用户通过文字来理解内容和完成工作，科学的字体系统应该具有良好的可读性。无衬线体更加亲和，现代，清晰便于阅读，为网页中常用的字体类型，因此arco
+优先使用各个系统中默认的无衬线字体。
+Mac OS-system Window-system
+中文字体 PingFang SC Microsoft Yahei</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#21 style-guideline</span>
+      <span class="chunk-meta">265 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">英文字体 Nunito Nunito
+数字字体 常规数字： Nunito 特殊数字: Byte Number 常规数字： Nunito 特殊数字: Byte Number
+同时考虑业务实际使用情况和不同平台稳定性，提供了一套备用字体。
+
+@font-family: 'nunito_for_arco', 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+  'Microsoft YaHei', ' 微软雅⿊ ', Arial, sans-serif;</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#22 style-guideline</span>
+      <span class="chunk-meta">58 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">字号
+文字的大小，层级，对比度等都是影响视觉可读性和阅读效率的重要因素，为保障文本的易读性，界面文字需满足以下要求：</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#23 style-guideline</span>
+      <span class="chunk-meta">162 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">最小可识别文字尺寸：12px
+字体层级：区分文本主副层级，字号差距需保持2-4px
+一个产品中不要有过多的字体层级，建议选择在 3-5 种之间，对于需要用户关注的文本信息可通过增加字重的方式突出
+考虑arco的通用性和包容性，在字号的选择上，我们将主字号定义为14px，并提供了不同层级的字号以适配不同信息层级的展示需求。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#24 style-guideline</span>
+      <span class="chunk-meta">151 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">行高
+目前通用的建议中，西文的基本行高是字号的1.2倍左右。中文因为字符密实且高度一致，没有西文的上伸部（ascender）和下延部（descender）来创造行间
+空隙，所以一般行高需要更大，根据阅读人群划分（儿童、年轻人、老年人），可达到 1.5 至 2 倍甚至更大。arco默认的行高为1.4倍。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#25 style-guideline</span>
+      <span class="chunk-meta">211 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">字重
+同一个字体的不同字重能传达不同的信息权重和情绪。细的字体给人以细腻、轻快的感觉，而粗体则给人着重和严肃的认知。因此适合的场景使用合适的字重非
+常重要。多数情况下，采用 Regular 以及 Medium 的两种字体重量，分别对应代码中的 400 和 500。在英文或数字字体加粗的情况下会采用 semibold 的字体
+重量，对应代码中的 600。在部分特殊场景中会采用Light的字体重量，对应代码中的300。
+
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#26 style-guideline</span>
+      <span class="chunk-meta">125 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">段落间距
+段落文本中文字的可读性，由字号、行高和段间距的变量决定。在文字较多的内容中，段落与段落之间需要有一定的间距以保证最好的显示效果。根据 WCAG
+中的 AAA 标准，段落间距至少为字体大小的 1.5 倍。正文14px字号对应段间距为21px。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#27 style-guideline</span>
+      <span class="chunk-meta">215 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">阴影
+在界面中，我们常用阴影来模拟元素之间的物理层级关系。清晰自然的阴影能帮助用户快速理解界面中元素的空间关系，更清楚的理解整理界面内容。
+不同的阴影高度可以代表不同的元素层级，arco定义了四层基础的阴影高度，以适配页面中常用的元素层级。低层级元素（例如卡片等）的默认阴影可使用一级
+阴影，hover态等常规交互操作可以使用二级阴影，需要进行突出展示以及表示在空间上最上层的元素（例如下拉菜单、模态框等）可以使用三级和四级阴影。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#28 style-guideline</span>
+      <span class="chunk-meta">99 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">文案样式
+文案样式影响着界面中信息传达的效率和准确性，界面中文案样式应符合相应的文本规范，并保持简洁清晰和表达一致。基于中英文文案规范及过往业务经验，
+arco总结了中后台产品中常用的文案样式建议。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#29 style-guideline</span>
+      <span class="chunk-meta">57 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">日期与时间
+时间是界面中很常用的数据格式，arco建议使用24小时制，最大程度避免因格式不统一而带来的困惑与误解。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#30 style-guideline</span>
+      <span class="chunk-meta">116 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">通用标点符号
+使用「…」作为省略号。
+
+
+破折号应占两个汉字空间。
+使用“≤”表示“小于等于”。
+点号（顿号、逗号、句号等）、结束引号、结束括号等，不能出现在一行的开头。
+
+开始引号、开始括号、开始双书名号等，不能出现在一行的结尾。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#31 style-guideline</span>
+      <span class="chunk-meta">164 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">英文标点符号
+逗号、句号等标号后加需一个空格。
+
+度的标志、百分号等符号前不加空格。
+货币标志、表正负数符号等符号后不加空格。
+
+「at」标志（电子邮件除外）、版权标识、项目符号等符号后加空格。
+括号、引号前后加空格，中间内容无空格。
+
+连字符（-）将两个相关单词组合成一个单词。
+全角连接号（—）常表示文章中断、转折或说明。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#32 style-guideline</span>
+      <span class="chunk-meta">78 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">中英文排版规则
+中英文之间需要加空格。
+中文与链接之间增加空格。
+
+使用正确的缩写。
+全角标点与英文或数字之间不加空格。
+
+遇到完整的英文句子使用半角标点。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#33 style-guideline</span>
+      <span class="chunk-meta">280 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">数字
+边界情况：若文案中含有不断变化的数字，应考虑边界情况。
+
+汉字数字：当需要突出庄重典雅的表达效果，应使用汉字数字。
+数字分节：为便于阅读，四位以上的整数或小数，应该使用千分撇进行分节：整数部分每三位一组，以“,”分节,小数部分不分节。四位以内（含四位数）的整数
+可以不分节。
+
+数值范围：在表示数值的范围时，可采用波浪式连接号“~”或一字线连接号“—”。前后两个数值的附加符号或计量单位相同时，在不造成歧义的情况下，前
+一个数值的附加符号或计量单位可省略。
+中文与数字之间需要加空格，但类似于“7号线”、“3D打印”等不表达数量信息的数字无需补加空格。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#34 style-guideline</span>
+      <span class="chunk-meta">46 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">用语原则
+界面中的用语应遵循5个主要原则：词汇统一、语法正确、文案精炼、通俗易懂、语言友好。</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#35 style-guideline</span>
+      <span class="chunk-meta">57 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">词汇统一
+不同场景描述同一事物的词汇需要统一。
+页面入口文案和二级页 Title 文案要相关一致，不能毫无关联。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#36 style-guideline</span>
+      <span class="chunk-meta">39 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">语法正确
+统计文案格式：数字+单位+动词/名词。
+操作文案格式：动词+名词。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#37 style-guideline</span>
+      <span class="chunk-meta">27 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">文案精炼
+精简语句，减轻用户理解负担。
+避免口语化。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#38 style-guideline</span>
+      <span class="chunk-meta">37 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">通俗易懂
+报错时，告知用户原因。
+使用用户熟悉的语言，避免看不懂的术语。
+</div>
+  </div>
+
+  <div class="chunk" data-doc="style-guideline">
+    <div class="chunk-header" style="background:#E3F2FD;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#39 style-guideline</span>
+      <span class="chunk-meta">81 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">语言友好
+正确使用人称代词：不使用敬称「您」和有性别歧义的代词。
+默认状态下，避免使用「不要」、「不能」、「请勿」。
+
+避免使用过于绝对的表述，会让用户觉得不适。</div>
+  </div>
+
+  <div class="chunk" data-doc="values">
+    <div class="chunk-header" style="background:#F3E5F5;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#40 values</span>
+      <span class="chunk-meta">61 字 </span>
+    </div>
+    <div class="chunk-body">设计价值观
+Arco Design 基于「清晰」、「一致」、「韵律」和「开放」的设计价值观，试图建立务实而浪漫的工作方式。</div>
+  </div>
+
+  <div class="chunk" data-doc="values">
+    <div class="chunk-header" style="background:#F3E5F5;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#41 values</span>
+      <span class="chunk-meta">124 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">清晰的指向亦是效率的提升
+效率的提升是务实的基础。设计中减少不确定的因素, 减少用户判断次数，明确信息层级导向，让用户操作的目的性更明确。
+清晰的设计体系使得产品操作直观，流程一步到位；信息传达清晰且表意明确使用户在极短时间内快速理解进而作出判断。</div>
+  </div>
+
+  <div class="chunk" data-doc="values">
+    <div class="chunk-header" style="background:#F3E5F5;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#42 values</span>
+      <span class="chunk-meta">141 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">一致的设计产生品牌信赖感
+品牌的一致性是务实的目的。样式规范、操作流程、呈现高度一致, 这样统一的设计标准, 能够体现出产品的品牌感与信赖感。
+一致的设计标准, 使品牌感呈现出系统性的传达。高标准的一致的设计体系, 给用户带来品牌信赖感同时还能够通过一致的重复降低用户反复学习成本。</div>
+  </div>
+
+  <div class="chunk" data-doc="values">
+    <div class="chunk-header" style="background:#F3E5F5;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#43 values</span>
+      <span class="chunk-meta">176 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">跳动的韵律构建字节的美感
+推敲设计的韵律是 Bytedancer 的浪漫。产品使用中的韵律反应了用户习惯, 富有韵律的设计让用户的操作仿佛本该如此，减少理解记忆负担。
+设计系统和音乐谱曲一样有着韵律之美,对每个信息模块的排版的考量,对元素之间重复与对比等规律的潜在追求与把握, 构成UI设计中的韵律之美。悦耳的韵律使
+得用户能够根据习惯轻松的完成任务。</div>
+  </div>
+
+  <div class="chunk" data-doc="values">
+    <div class="chunk-header" style="background:#F3E5F5;" onclick="toggleChunk(this)">
+      <span class="chunk-title">#44 values</span>
+      <span class="chunk-meta">166 字 <span class='overlap-badge no'>❌ 无重叠</span></span>
+    </div>
+    <div class="chunk-body">开放包容是解决问题的思路
+包容开放的体系才能浪漫的解决问题。中后台产品复杂的业务场景很难以一套固定的设计体系去涵盖,只有开放包容的体系才能适应复杂的业务场景。
+
+中后台产品场景繁多, 为了能够解决实际的具体问题将设计系统真正赋能业务, 设计体系需要能够在可配置的范围内可以灵活调整。基于功能和场景，演变出合适
+的设计模型和交互形式。</div>
+  </div>
+
+</div>
+
+<script>
+function toggleChunk(header) {
+  var body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function filterChunks() {
+  var query = document.getElementById('searchInput').value.toLowerCase();
+  var chunks = document.querySelectorAll('.chunk');
+  chunks.forEach(function(chunk) {
+    var text = chunk.textContent.toLowerCase();
+    chunk.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function toggleDocFilter(btn) {
+  btn.classList.toggle('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  var activeDocs = Array.from(document.querySelectorAll('.filter-btn.active')).map(function(b) { return b.dataset.doc; });
+  var allChunks = document.querySelectorAll('.chunk');
+  allChunks.forEach(function(chunk) {
+    if (activeDocs.length === 0) {
+      chunk.style.display = '';
+    } else {
+      chunk.style.display = activeDocs.includes(chunk.dataset.doc) ? '' : 'none';
+    }
+  });
+}
+
+// 默认展开所有
+document.querySelectorAll('.chunk-body').forEach(function(b) { b.classList.add('open'); });
+</script>
+</body>
+</html>
