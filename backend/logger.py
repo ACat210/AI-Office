@@ -30,7 +30,10 @@ file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
 
 # 创建控制台handler
-console_handler = logging.StreamHandler()
+import sys
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
 console_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
 

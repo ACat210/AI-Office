@@ -299,6 +299,7 @@ def _dashscope_embed(texts: list) -> list:
 
     绕过 langchain-openai 的 tokenization 问题，
     直接发送原始文本给 DashScope。
+    自动分批发送，避免单次请求文本过多导致 400 错误。
 
     Args:
         texts: 文本列表
@@ -316,27 +317,34 @@ def _dashscope_embed(texts: list) -> list:
     if not api_key:
         raise ValueError("未设置 API Key")
 
-    payload = {
-        "model": model,
-        "input": texts,
-        "encoding_format": "float",
-    }
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
     }
 
-    try:
-        resp = req.post(url, json=payload, headers=headers, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        # 按输入顺序提取向量
-        sorted_data = sorted(data["data"], key=lambda x: x["index"])
-        return [item["embedding"] for item in sorted_data]
-    except Exception as e:
-        log_error(f"  ⚠️  DashScope embedding 调用失败: {e}")
-        raise
+    # DashScope embedding API 有输入数量限制，分批发送
+    BATCH_SIZE = 10
+    all_embeddings = [None] * len(texts)
+
+    for batch_start in range(0, len(texts), BATCH_SIZE):
+        batch = texts[batch_start:batch_start + BATCH_SIZE]
+        payload = {
+            "model": model,
+            "input": batch,
+            "encoding_format": "float",
+        }
+        try:
+            resp = req.post(url, json=payload, headers=headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            sorted_data = sorted(data["data"], key=lambda x: x["index"])
+            for i, item in enumerate(sorted_data):
+                all_embeddings[batch_start + i] = item["embedding"]
+        except Exception as e:
+            log_error(f"  ⚠️  DashScope embedding 分批调用失败 (batch {batch_start}-{batch_start + len(batch)}): {e}")
+            raise
+
+    return all_embeddings
 
 
 class DesignKnowledgeBase:
