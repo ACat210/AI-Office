@@ -1,9 +1,9 @@
 {
   "scores": {
-    "faithfulness": 0.8421052631578947,
-    "answer_relevancy": 0.7636009222542417,
-    "llm_context_precision_without_reference": 0.8374999999277083,
-    "context_recall": 0.6376811594202898
+    "faithfulness": 0.8391304347826087,
+    "answer_relevancy": 0.5902480930551254,
+    "llm_context_precision_without_reference": 0.7898550724025363,
+    "context_recall": 0.5942028985507246
   },
   "retrieval_metrics": {
     "precision_at_3": 0.23188405797101444,
@@ -12,44 +12,44 @@
   },
   "per_category": {
     "价值观": {
-      "faithfulness": 0.5,
-      "answer_relevancy": 0.9122478981677571,
-      "llm_context_precision_without_reference": 0.41666666662499996,
-      "context_recall": 0.6
+      "faithfulness": 0.8666666666666668,
+      "answer_relevancy": 0.7547342483533409,
+      "llm_context_precision_without_reference": 0.53333333328,
+      "context_recall": 0.5
     },
     "原则": {
       "faithfulness": 0.6666666666666666,
-      "answer_relevancy": 0.6770366867883756,
-      "llm_context_precision_without_reference": 0.7222222221638889,
+      "answer_relevancy": 0.2675429040762746,
+      "llm_context_precision_without_reference": 0.7499999999597221,
       "context_recall": 0.5
     },
     "文字": {
       "faithfulness": 1.0,
-      "answer_relevancy": 0.6250257444722648,
+      "answer_relevancy": 0.608034606629107,
       "llm_context_precision_without_reference": 0.9999999999166667,
-      "context_recall": 0.6666666666666666
+      "context_recall": 0.5
     },
     "文案": {
-      "faithfulness": 1.0,
-      "answer_relevancy": 0.534537684538747,
-      "llm_context_precision_without_reference": 0.9999999999222222,
+      "faithfulness": 0.7222222222222222,
+      "answer_relevancy": 0.3057105317809011,
+      "llm_context_precision_without_reference": 0.7222222221638889,
       "context_recall": 0.3333333333333333
     },
     "综合": {
-      "faithfulness": 1.0,
-      "answer_relevancy": 0.8805075703976997,
-      "llm_context_precision_without_reference": 0.7916666666020833,
+      "faithfulness": 0.9,
+      "answer_relevancy": 0.882749298695128,
+      "llm_context_precision_without_reference": 0.9166666666291666,
       "context_recall": 0.8333333333333333
     },
     "色彩": {
-      "faithfulness": 0.8333333333333334,
-      "answer_relevancy": 0.9580170751411011,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.955145341892293,
       "llm_context_precision_without_reference": 0.9999999999,
       "context_recall": 1.0
     },
     "阴影": {
       "faithfulness": 1.0,
-      "answer_relevancy": 0.8256049470267831,
+      "answer_relevancy": 0.8246074357463714,
       "llm_context_precision_without_reference": 0.9999999999,
       "context_recall": 1.0
     }
@@ -95,84 +95,84 @@
     {
       "question": "Arco Design 的设计价值观是什么？",
       "category": "价值观",
-      "answer": "根据设计规范文档，Arco Design 的设计价值观是「清晰」、「一致」、「韵律」和「开放」。",
+      "answer": "Arco Design 的设计价值观是「清晰」、「一致」、「韵律」和「开放」。",
       "reference": "Arco Design 的设计价值观是「清晰」、「一致」、「韵律」和「开放」。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「清晰」价值观具体指什么？",
       "category": "价值观",
-      "answer": "根据设计规范文档，Arco Design 的「清晰」价值观具体指提升效率，是务实的基础。",
+      "answer": "根据设计规范文档，Arco Design 的「清晰」价值观具体指：清晰的效率提升是务实的基础，属于务实的方向。",
       "reference": "「清晰」指效率的提升。清晰的设计体系使得产品操作直观，流程一步到位；信息传达清晰且表意明确，使用户在极短时间内快速理解进而作出判断。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「一致」价值观有什么作用？",
       "category": "价值观",
-      "answer": "根据设计规范文档，Arco Design 的「一致」价值观的作用是：体现产品的品牌感与信赖感，使品牌感呈现系统性的传达，并通过一致的重复降低用户反复学习成本。",
+      "answer": "根据设计规范文档，Arco Design 的「一致」价值观的作用是：建立品牌信赖感，并通过一致的重复降低用户反复学习成本。",
       "reference": "「一致」的设计能产生品牌信赖感。一致的设计使品牌感呈现出系统性的传达，高标准的一致设计体系给用户带来品牌信赖感，同时还能通过一致的重复降低用户反复学习成本。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「韵律」价值观是什么意思？",
       "category": "价值观",
-      "answer": "根据设计规范文档，Arco Design 的「韵律」价值观属于浪漫方向，意味着“推敲设计的韵律”是Bytedancer的浪漫，强调通过推敲设计细节来体现浪漫特质。",
+      "answer": "根据设计规范文档，「韵律」价值观属于浪漫方向，是“推敲设计的韵律”的体现，但文档未提供更具体的定义。",
       "reference": "「韵律」指推敲设计的韵律，对元素之间重复与对比等规律的潜在追求与把握，构成UI设计中的韵律之美。悦耳的韵律使得用户能够根据习惯轻松的完成任务。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「开放」价值观是什么意思？",
       "category": "价值观",
-      "answer": "根据设计规范文档，“开放”价值观意味着“包容开放的体系”，能够“浪漫地解决问题”。",
+      "answer": "根据设计规范文档，Arco Design 的「开放」价值观属于「浪漫」的方向，意味着**包容开放的体系才能浪漫地解决问题**。",
       "reference": "「开放」指包容开放的体系能够有效解决多样化的问题。开放包容的思路让设计系统能够适应不同场景和需求。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 设计原则中的「及时反馈」是什么？",
       "category": "原则",
-      "answer": "根据设计规范文档，**「及时反馈」** 是指：系统应该让用户知道目前的状态，并及时给予相对应的反馈。",
+      "answer": "根据设计规范文档，**及时反馈**是指：系统应该让用户知道目前的状态，并及时给予相对应的反馈。",
       "reference": "系统应该让用户知道目前的状态，并及时给予相对应的反馈。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 设计原则中的「贴近现实」是什么意思？",
       "category": "原则",
-      "answer": "根据设计规范文档，「贴近现实」是指：系统应该使用用户的语言、用词、短语和用户熟悉的概念，而不是系统术语；同时遵循现实世界的惯例，让信息符合自然思考逻辑。",
+      "answer": "根据设计规范参考3中的说明，「贴近现实」是指：系统应使用用户的语言、用词、短语和熟悉的概念，避免系统术语；遵循现实世界的惯例，使信息符合自然的思考逻辑。",
       "reference": "系统应该用用户的语言，用词，短语和用户熟悉的概念，而不是系统术语。遵循现实世界的惯例，让信息符合自然思考逻辑。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 如何防止用户操作错误？",
       "category": "原则",
-      "answer": "根据设计规范文档，Arco Design 通过“防止错误发生”的原则来防止用户操作错误：即在用户选择动作发生之前，通过更用心的设计避免用户混淆或错误选择，而不是依赖事后错误提示。",
+      "answer": "根据提供的设计规范文档，没有直接说明 Arco Design 如何防止用户操作错误。文档中仅提到通用的“防止错误发生”原则，但未具体关联到 Arco Design 的实现方式。",
       "reference": "比出现错误信息提示更好的是更用心的设计防止这类问题发生。在用户选择动作发生之前，就要防止用户容易混淆或者错误的选择。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「突出重点」原则是什么？",
       "category": "原则",
-      "answer": "根据提供的设计规范文档，未找到关于「突出重点」原则的相关信息。",
+      "answer": "根据提供的设计规范文档，没有关于「突出重点」原则的相关信息。",
       "reference": "用户的浏览动作不是读，不是看，而是扫。设计中应该突出重点，弱化和剔除无关信息。重要对话中不应该包含无关紧要的信息。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「遵从习惯」原则是什么？",
       "category": "原则",
-      "answer": "根据提供的设计规范文档，没有找到关于「遵从习惯」原则的相关信息。文档中仅提到了设计价值观（清晰、一致、韵律、开放）和设计语言（务实的浪漫主义），未涉及「遵从习惯」这一具体原则。",
+      "answer": "根据提供的设计规范文档，没有找到关于「遵从习惯」原则的相关信息。文档中仅提到了设计价值观（清晰、一致、韵律、开放）和设计原则（务实的浪漫主义），未涉及「遵从习惯」这一具体原则。",
       "reference": "尽量减少用户对操作目标的记忆负荷，动作和选项都应该是可见的。比如填完表单，下一步应该生成表单，而不是下一步就是完成。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「人性化帮助」原则是什么？",
       "category": "原则",
-      "answer": "根据提供的设计规范文档，没有找到关于「人性化帮助」原则的相关信息。",
+      "answer": "根据提供的设计规范文档，没有关于「人性化帮助」原则的相关信息。",
       "reference": "如果系统不需要使用帮助文档是最好的，但有必要时提供帮助文档也是必须的。帮助文档应该易于搜索，并提供具体的操作步骤。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 将色彩分为哪几类？",
       "category": "色彩",
-      "answer": "根据设计规范文档，Arco Design 将色彩分为主色、中性色、功能色和遮罩色四类。",
+      "answer": "根据文档，Arco Design 将色彩分为主色、中性色、功能色和遮罩色。",
       "reference": "Arco 将色彩分为主色、中性色、功能色和遮罩色。",
       "contexts_count": 3
     },
@@ -186,7 +186,7 @@
     {
       "question": "Arco Design 的功能色有什么作用？",
       "category": "色彩",
-      "answer": "根据设计规范文档，Arco Design 的功能色主要作用是向用户明确传达成功、警告、错误、链接等信息和状态。",
+      "answer": "根据参考1，Arco Design 的功能色主要作用是向用户明确传达成功、警告、错误、链接等信息和状态。",
       "reference": "功能色的主要作用是向用户明确的传达成功、警告、错误、链接等信息和状态。Arco 基于用户对色彩的通用认知，提供了适合不同状态的功能色及其配套色板。",
       "contexts_count": 3
     },
@@ -200,56 +200,56 @@
     {
       "question": "Arco Design 的主字号是多少？",
       "category": "文字",
-      "answer": "根据提供的设计规范文档，未提及 Arco Design 的主字号信息。",
+      "answer": "根据提供的设计规范文档，没有找到关于 Arco Design 主字号的信息。",
       "reference": "Arco 将主字号定义为14px，并提供了不同层级的字号以适配不同信息层级的展示需求。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 推荐的默认行高是多少？",
       "category": "文字",
-      "answer": "Arco Design 推荐的默认行高是字号的 1.4 倍。",
+      "answer": "Arco Design 推荐的默认行高是 1.4 倍。",
       "reference": "Arco 默认的行高为1.4倍字体大小。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 中如何使用阴影？",
       "category": "阴影",
-      "answer": "Arco Design 通过四层基础阴影高度来模拟元素层级：低层级元素（如卡片）默认使用一级阴影，常规交互（如 hover）使用二级阴影，突出展示或最上层元素（如下拉菜单、模态框）使用三级和四级阴影。",
+      "answer": "根据设计规范，Arco Design 使用四层基础阴影高度来模拟元素层级关系：低层级元素（如卡片）默认使用一级阴影；hover 等常规交互操作使用二级阴影；需要突出展示或表示空间上最上层的元素（如下拉菜单、模态框）使用三级和四级阴影。",
       "reference": "在界面中常用阴影来模拟元素的高度和层次关系。交互操作可以使用二级阴影，需要进行突出展示以及表示在空间上最上层的元素（如下拉菜单、模态框等）可以使用三级和四级阴影。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 对日期与时间的格式有什么建议？",
       "category": "文案",
-      "answer": "根据设计规范，Arco Design 建议使用 **24 小时制**，以最大程度避免因格式不统一带来的困惑与误解。",
+      "answer": "根据设计规范参考1，Arco Design 建议使用24小时制，以最大程度避免因格式不统一带来的困惑与误解。",
       "reference": "Arco 建议使用24小时制，最大程度避免因格式不统一而带来的困惑与误解。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的中英文排版规则是什么？",
       "category": "文案",
-      "answer": "根据提供的设计规范文档，没有关于Arco Design中英文排版规则的相关信息。",
+      "answer": "根据提供的设计规范文档，未找到关于 Arco Design 中英文排版规则的相关信息。",
       "reference": "中英文之间需要加空格。中文与链接之间增加空格。全角标点与英文或数字之间不加空格。遇到完整的英文句子使用半角标点。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的用语原则有哪些？",
       "category": "文案",
-      "answer": "根据提供的设计规范文档，没有关于“用语原则”的相关信息。文档中仅提及了设计价值观（清晰、一致、韵律、开放）和设计原则（务实的浪漫主义等），但未涉及具体的用语原则。",
+      "answer": "根据提供的设计规范文档，没有找到关于“用语原则”的相关信息。文档中仅提到了设计价值观（清晰、一致、韵律、开放）和设计原则（作为修辞手法的描述），但未具体说明用语原则。",
       "reference": "界面中的用语应遵循5个主要原则：词汇统一、语法正确、文案精炼、通俗易懂、语言友好。",
       "contexts_count": 3
     },
     {
       "question": "ArcoDesign 是什么？",
       "category": "综合",
-      "answer": "根据提供的设计规范文档，ArcoDesign 是一套设计系统的简称，它基于 Byte Design 升级而来，是能力全面的企业级产品设计系统，主要服务于字节跳动旗下中后台产品的体验设计和技术实现。",
+      "answer": "根据提供的设计规范文档，ArcoDesign 是一套设计系统的简称，主要服务于字节跳动旗下中后台产品的体验设计和技术实现，由UED设计和开发同学共同构建及维护。其设计价值观为「清晰」、「一致」、「韵律」和「开放」。",
       "reference": "ArcoDesign 是一套设计系统的简称，基于 Byte Design 升级而来，是能力全面的企业级产品设计系统，主要服务于字节跳动旗下中后台产品的体验设计和技术实现。",
       "contexts_count": 3
     },
     {
       "question": "Arco Design 的「务实的浪漫主义」是什么意思？",
       "category": "综合",
-      "answer": "根据设计规范文档，“务实的浪漫主义”是对 Arco Design 设计语言的形容，代表着其试图建立的工作模式。它强调务实与浪漫并非对立，而是相辅相成：其中“清晰”与“一致”对应务实方向（提升效率、保持品牌一致性），“韵律”与“开放”对应浪漫方向（推敲细节、包容解决问题）。",
+      "answer": "根据设计规范文档，“务实的浪漫主义”是对设计语言的形容，代表着 Arco Design 试图建立的工作模式。它强调务实（清晰、一致）与浪漫（韵律、开放）相辅相成，共同引导设计方向，而非矛盾对立。",
       "reference": "务实的浪漫主义是对设计语言的形容，代表着ArcoDesign试图建立的工作模式。务实=同理心，浪漫=想象力。浪漫与务实并非矛盾对立，而是相辅相成。",
       "contexts_count": 3
     }

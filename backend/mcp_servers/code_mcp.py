@@ -10,10 +10,10 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 # 创建 MCP Server
-mcp = FastMCP("code-mcp", instructions="代码操作工具集：读文件、写文件、搜索代码、运行命令")
+mcp = MCPServer("code-mcp", instructions="代码操作工具集：读文件、写文件、搜索代码、运行命令")
 
 # 安全限制：只允许操作这些目录
 ALLOWED_DIRS = [
@@ -224,6 +224,6 @@ def run_command(command: str, args: str = "") -> str:
         return f"错误: 命令执行失败 - {str(e)}"
 
 
-def get_code_mcp() -> FastMCP:
+def get_code_mcp() -> MCPServer:
     """获取 Code MCP Server 实例"""
     return mcp

@@ -19,6 +19,9 @@ import sys
 import json
 from typing import List, Dict, Any
 
+# 评估脚本不需要 LangSmith 追踪
+os.environ["LANGSMITH_TRACING"] = "false"
+
 # 修复 Windows GBK 编码问题
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
@@ -232,6 +235,19 @@ class RAGEvaluator:
 
 def run_ragas_evaluation(results: List[Dict[str, Any]]):
     """使用 RAGAS 评估检索和生成质量"""
+    # ragas 0.3.x 仍从 langchain_community.chat_models.vertexai 导入
+    # 但新版 langchain-community 已移除该模块，这里做兼容
+    import sys as _sys
+    if "langchain_community.chat_models.vertexai" not in _sys.modules:
+        try:
+            from langchain_google_vertexai import ChatVertexAI as _ChatVertexAI
+            import types as _types
+            _vertexai_module = _types.ModuleType("langchain_community.chat_models.vertexai")
+            _vertexai_module.ChatVertexAI = _ChatVertexAI
+            _sys.modules["langchain_community.chat_models.vertexai"] = _vertexai_module
+        except ImportError:
+            pass
+
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import (
@@ -252,7 +268,7 @@ def run_ragas_evaluation(results: List[Dict[str, Any]]):
 
     log_info(f"  📊 数据集大小: {len(dataset)} 条")
 
-    # 配置 LLM 评估器 (需要设置 n=1 避免模型不支持多 generation)
+    # 配置 LLM 评估器
     from langchain_openai import ChatOpenAI
     eval_llm = ChatOpenAI(
         model=settings.LLM_MODEL_ID,
@@ -260,11 +276,9 @@ def run_ragas_evaluation(results: List[Dict[str, Any]]):
         base_url=settings.LLM_BASE_URL,
         temperature=0.0,
     )
-    # 设置 n=1，避免模型不支持 n>1
-    eval_llm.n = 1
 
     from ragas.llms import LangchainLLMWrapper
-    langchain_llm = LangchainLLMWrapper(eval_llm, bypass_n=True)
+    langchain_llm = LangchainLLMWrapper(eval_llm)
 
     # 配置 Embedding 评估器
     from ragas.embeddings import LangchainEmbeddingsWrapper

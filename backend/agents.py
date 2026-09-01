@@ -20,7 +20,6 @@ from logger import (
     log_memory_saved, log_dialogue_end, log_info,
     log_error
 )
-
 load_dotenv()
 
 
@@ -194,6 +193,8 @@ class NPCMemorySystem:
                 doc_id = vs.index_to_docstore_id[idx]
                 doc = vs.docstore.search(doc_id)
                 if doc and doc.metadata.get("type") != "init":
+                    # Store faiss_doc_id for consolidate() to use when deleting
+                    doc.metadata["faiss_doc_id"] = doc_id
                     docs.append(doc)
                     if len(docs) >= limit:
                         break
@@ -359,7 +360,7 @@ class NPCMemorySystem:
 
         # 删除旧记忆
         for doc in old_docs:
-            doc_id = doc.metadata.get("id", "")
+            doc_id = doc.metadata.get("faiss_doc_id", "")
             if doc_id:
                 try:
                     vs.delete([doc_id])

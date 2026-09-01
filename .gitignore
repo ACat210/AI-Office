@@ -12,3 +12,5 @@ backend/generated/
 
 
 *.log
+
+/evaluation_*

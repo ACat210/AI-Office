@@ -49,8 +49,14 @@ async def lifespan(app: FastAPI):
     print("🎮 数字办公室后端服务启动中...")
     print("=" * 60)
 
+    # 初始化可观测性 (LangSmith)
+    _init_observability()
+
     # 验证配置
     settings.validate()
+
+    # 确保数据目录存在
+    _ensure_directories()
 
     # 初始化NPC管理器
     npc_manager = get_npc_manager()
@@ -67,29 +73,42 @@ async def lifespan(app: FastAPI):
     print("✅ 服务已关闭\n")
 
 
-# 创建FastAPI应用
-app = FastAPI(
-    title=settings.API_TITLE,
-    version=settings.API_VERSION,
-    description="数字办公室 - 基于LangChain的AI NPC对话系统",
-    lifespan=lifespan
-)
+def _ensure_directories():
+    """确保必要的数据目录存在"""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    dirs = [
+        "generated",      # 技术多生成的代码文件
+        "memory_data",    # NPC 记忆向量库持久化
+        "logs",           # 对话日志
+    ]
+    for name in dirs:
+        path = os.path.join(base_dir, name)
+        os.makedirs(path, exist_ok=True)
+        print(f"  📁 已确认目录: {name}")
 
-# CORS配置
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# 获取全局实例
-npc_manager = None
+def _init_observability():
+    """初始化 LangSmith 可观测性
 
-# Agent 协作历史存储 (内存)
-_agent_histories: dict = {}
+    LangSmith 通过环境变量自动检测，设置后所有 LangChain/LangGraph
+    调用会自动追踪，无需修改任何代码调用。
+    代理配置已在 config.py 中自动处理。
+    """
+    if not settings.LANGSMITH_API_KEY:
+        return
 
+    os.environ.setdefault("LANGSMITH_TRACING", "true" if settings.LANGSMITH_TRACING else "false")
+    os.environ.setdefault("LANGSMITH_API_KEY", settings.LANGSMITH_API_KEY)
+    os.environ.setdefault("LANGSMITH_PROJECT", settings.LANGSMITH_PROJECT)
+    os.environ.setdefault("LANGSMITH_ENDPOINT", settings.LANGSMITH_ENDPOINT)
+
+    if settings.LANGSMITH_TRACING:
+        status = "已启用"
+        if settings.LANGSMITH_PROXY:
+            status += f" (代理: {settings.LANGSMITH_PROXY})"
+        else:
+            status += " (未配置代理，国内网络可能需要代理才能连接)"
+        print(f"  📊 LangSmith 可观测性: {status} (项目: {settings.LANGSMITH_PROJECT})")
 
 def get_npc_mgr():
     """获取NPC管理器实例"""

@@ -11,7 +11,7 @@ const API_CHAT_STREAM = API_BASE_URL + "/chat/stream"
 const API_AGENT_CHAT = API_BASE_URL + "/agent/chat"
 const API_AGENT_CHAT_STREAM = API_BASE_URL + "/agent/chat/stream"
 const API_NPCS = API_BASE_URL + "/npcs"
-const API_NPC_STATUS = API_BASE_URL + "/npcs/status"
+# const API_NPC_STATUS = API_BASE_URL + "/npcs/status"  # REMOVED - endpoint doesn't exist
 
 # ==================== NPC配置 ====================
 # NPC名字在这里统一配置，方便修改

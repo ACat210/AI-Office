@@ -1,21 +1,42 @@
-# FastAPI后端依赖
+# FastAPI后端
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# LangChain 生态
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+faiss-cpu>=1.8.0
+
+# 多Agent工作流
+langgraph>=0.2.0
+
+# 向量数据库
+qdrant-client>=1.9.0
+
+# 知识库文档处理
+pypdf>=4.0.0
+
+# MCP 协议 (Code MCP Server)
+mcp>=2.0.0
+
+# HTTP 客户端
 requests>=2.31.0
 
-# CORS支持
-python-multipart>=0.0.6
+# 环境变量
+python-dotenv>=1.0.0
 
 # 测试工具
 pytest>=7.4.0
 httpx>=0.25.0
 
-# LangChain
-langchain-core>=0.3.0
-langchain-openai>=0.2.0
-langchain-community>=0.3.0
-faiss-cpu>=1.8.0
+# RAG 评估 (仅在 evaluate_rag.py 中使用)
+datasets>=2.14.0
+ragas>=0.1.0
 
-# 环境变量
-python-dotenv>=1.0.0
+# 可观测性 (LLM 调用追踪、Token 统计 — LangSmith)
+# 注: langsmith 已作为 langchain-core 的依赖自动安装，无需额外添加
+# 只需设置环境变量即可启用
